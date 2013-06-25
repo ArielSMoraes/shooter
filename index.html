@@ -1,0 +1,153 @@
+<html>
+
+<head>
+	<title>Shooter</title>
+	
+	<style>
+		canvas{
+			margin-left: 350px;
+		}
+	</style>
+</head>
+
+<body >
+
+	<div id="wrapper">
+		<canvas id="canvas" height="600" width="800"></canvas>
+	</div>
+	
+	<script>
+		//utilities
+		function randomNum (from, to)
+		{
+			return Math.random()*(to-from+1)+from;
+		}
+	</script>
+	
+	<script src="player.particle.multiple.js" type="text/javascript"></script>
+	<script src="player.particle.basic.js" type="text/javascript"></script>
+	<script src="player.particle.fire.js" type="text/javascript"></script>
+	<script src="player.particle.factory.js" type="text/javascript"></script>
+	<script src="player.js" type="text/javascript"></script>
+	<script src="scene.js" type="text/javascript"></script>
+	<script src="enemy.js" type="text/javascript"></script>
+	
+	<script>
+	
+		window.requestAnimFrame = (function(callback)
+		{
+			return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+			function(callback)
+			{
+			  window.setTimeout(callback, 1000 / 60);
+			};
+		})();
+
+		var canvas = document.getElementById("canvas");
+		var context = canvas.getContext("2d");
+		
+		//encapsula
+		//(function ()
+		//{
+			//menu
+			//enemy
+			
+			//player
+			
+			//inicializa objetos
+			
+			var player = new Player();
+			var scene = new Scene(context, canvas);
+			var enemys = new Array(); 
+			
+			scene.randomEnemy(enemys);
+			
+			scene.backgroundImg.onload = function()
+			{
+				scene.setPattern(context)
+			}
+			
+			//posiciona nave
+			player.x = ( (canvas.width - player.width) / 2  );
+			player.y = (canvas.height - player.height);
+			player.refreshHitBox();
+			
+			var keys = {};
+			document.onkeydown = function(e)
+			{
+				if(e.which == 37 || e.which == 38 || e.which == 39 || e.which == 40 || e.which == 32)
+				{
+					e.preventDefault();
+				}
+				keys[e.which] = true;
+			}
+			
+			document.onkeyup = function (e)
+			{
+				delete keys[e.which];
+				player.setFace(player.faces.center);
+			}
+			
+			//fps
+			var filterStrength = 20;
+			var fdpsLog = 0;
+			var frameTime = 0, lastLoop = new Date, thisLoop;
+			
+			function animate()
+			{
+				context.clearRect(0, 0, canvas.width, canvas.height);
+				
+				player.actions(keys, scene, player);
+				
+				scene.drawScene(context, canvas);
+				
+				//colisoes
+				scene.colisionScene(player);
+				for(var i = 0; i < enemys.length; i++)
+				{
+					enemys[i].draw(context);
+					
+					//fim de jogo
+					if (scene.colisionDeath(player,enemys[i]))
+					{
+						return false;
+					}
+					
+					//acertou inimigo
+					if (scene.colisionShot(player,enemys[i], enemys, i))
+					{
+						i--;
+					}
+					
+					else if (scene.enemyEndScene(enemys[i], enemys, scene,i))
+					{
+						i--;
+					}
+				}
+			
+				player.draw(context);
+				player.drawHitBox(context);
+				
+				var thisFrameTime = (thisLoop=new Date) - lastLoop;
+				frameTime+= (thisFrameTime - frameTime) / filterStrength;
+				lastLoop = thisLoop;
+				
+				scene.drawFps(context, fdpsLog);
+				scene.drawScore(context, player);
+				
+				requestAnimFrame(function()
+				{
+					animate();
+				});
+			}
+			animate();
+
+			setInterval(function(){
+				fdpsLog = (1000/frameTime).toFixed(1) + " fps";
+			},1000);
+		//})();
+		
+	</script>
+</body>
+
+</html>
